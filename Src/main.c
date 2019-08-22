@@ -827,10 +827,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOK_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOJ_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, CE_Pin|CSN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : ENC2_A_Pin */
+  GPIO_InitStruct.Pin = ENC2_A_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ENC2_A_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : CE_Pin CSN_Pin */
   GPIO_InitStruct.Pin = CE_Pin|CSN_Pin;
@@ -839,11 +846,35 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SW1_Pin SW2_Pin */
-  GPIO_InitStruct.Pin = SW1_Pin|SW2_Pin;
+  /*Configure GPIO pins : ENC3_B_Pin SW1_Pin SW2_Pin */
+  GPIO_InitStruct.Pin = ENC3_B_Pin|SW1_Pin|SW2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ENC1_B_Pin */
+  GPIO_InitStruct.Pin = ENC1_B_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ENC1_B_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ENC2_B_Pin */
+  GPIO_InitStruct.Pin = ENC2_B_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ENC2_B_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ENC1_A_Pin */
+  GPIO_InitStruct.Pin = ENC1_A_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ENC1_A_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ENC3_A_Pin */
+  GPIO_InitStruct.Pin = ENC3_A_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(ENC3_A_GPIO_Port, &GPIO_InitStruct);
 
 }
 
@@ -921,62 +952,67 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 	/************* NOTE ***************/
 	//stm32f7xx_hal_gpio.h is changed at line 71, so GPIO_PIN_SET = 1
-	//Encoder 1 Pin A interrupts on both edges
-//	if (GPIO_Pin == GPIO_PIN_7) {
-//		//Check state of Pin A and Pin B to determine transition
-//
-//		//Outputs opposite states so CW rotation
-//		if (HAL_GPIO_ReadPin(GPIOF, ENC1_A_Pin)
-//				!= HAL_GPIO_ReadPin(GPIOC, ENC1_B_Pin)) {
-//
-//			if (roll_d > 0) {
-//				roll_d -= 0.005;
-//			}
-//
-//		}
-//		//Outputs same so CW rotation
-//		else if (HAL_GPIO_ReadPin(GPIOF, ENC1_A_Pin)
-//				== HAL_GPIO_ReadPin(GPIOC, ENC1_B_Pin)) {
-//			roll_d += 0.005;
-//		}
-//	}
-//	//Encoder 2 Pin A interrupts on both edges
-//	if (GPIO_Pin == GPIO_PIN_6) {
-//
-//		//Check state of Pin A and Pin B to determine transition
-//
-//		//Outuputs opposite states so CW rotation
-//		if (HAL_GPIO_ReadPin(GPIOH, ENC3_A_Pin)
-//				!= HAL_GPIO_ReadPin(GPIOI, ENC3_B_Pin)) {
-//			if (roll_p > 0) {
-//				roll_p -= 0.001;
-//			}
-//		}
-//		//Outputs same so CW rotation
-//		else if (HAL_GPIO_ReadPin(GPIOH, ENC3_A_Pin)
-//				== HAL_GPIO_ReadPin(GPIOI, ENC3_B_Pin)) {
-//			roll_p += 0.001;
-//		}
-//
-//	}
-//
-//	//Encoder 3 Pin A interrupts on both edges
-//	if (GPIO_Pin == GPIO_PIN_4) {
-//		//Check state of Pin A and Pin B to determine transition
-//		//Outuputs opposite states so CW rotation
-//		if (HAL_GPIO_ReadPin(GPIOB, ENC2_A_Pin)
-//				!= HAL_GPIO_ReadPin(GPIOG, ENC2_B_Pin)) {
-//			if (roll_i > 0) {
-//				roll_i -= 0.001;
-//			}
-//		}
-//		//Outputs same so CW rotation
-//		else if (HAL_GPIO_ReadPin(GPIOB, ENC2_A_Pin)
-//				== HAL_GPIO_ReadPin(GPIOG, ENC2_B_Pin)) {
-//			roll_i += 0.001;
-//		}
-//
-//	}
+
+
+	//Encoder 1 Pin A interrupt
+	if (GPIO_Pin == GPIO_PIN_7) {
+		//Check state of Pin A and Pin B to determine transition
+
+		//Outputs opposite states so CW rotation
+		if (HAL_GPIO_ReadPin(GPIOF, ENC1_A_Pin)
+				!= HAL_GPIO_ReadPin(GPIOC, ENC1_B_Pin)) {
+
+			if (roll_d > 0) {
+				roll_d -= 0.005;
+			}
+
+		}
+		//Outputs same so CW rotation
+		else if (HAL_GPIO_ReadPin(GPIOF, ENC1_A_Pin)
+				== HAL_GPIO_ReadPin(GPIOC, ENC1_B_Pin)) {
+			roll_d += 0.005;
+		}
+	}
+
+
+
+	//Encoder 2 Pin A interrupts on both edges
+	if (GPIO_Pin == GPIO_PIN_4) {
+		//Check state of Pin A and Pin B to determine transition
+		//Outuputs opposite states so CW rotation
+		if (HAL_GPIO_ReadPin(GPIOB, ENC2_A_Pin)
+				!= HAL_GPIO_ReadPin(GPIOG, ENC2_B_Pin)) {
+			if (roll_i > 0) {
+				roll_i -= 0.001;
+			}
+		}
+		//Outputs same so CW rotation
+		else if (HAL_GPIO_ReadPin(GPIOB, ENC2_A_Pin)
+				== HAL_GPIO_ReadPin(GPIOG, ENC2_B_Pin)) {
+			roll_i += 0.001;
+		}
+
+	}
+
+	//Encoder 3 Pin A interrupt
+	if (GPIO_Pin == GPIO_PIN_6) {
+
+		//Check state of Pin A and Pin B to determine transition
+
+		//Outuputs opposite states so CW rotation
+		if (HAL_GPIO_ReadPin(GPIOH, ENC3_A_Pin)
+				!= HAL_GPIO_ReadPin(GPIOI, ENC3_B_Pin)) {
+			if (roll_p > 0) {
+				roll_p -= 0.001;
+			}
+		}
+		//Outputs same so CW rotation
+		else if (HAL_GPIO_ReadPin(GPIOH, ENC3_A_Pin)
+				== HAL_GPIO_ReadPin(GPIOI, ENC3_B_Pin)) {
+			roll_p += 0.001;
+		}
+
+	}
 
 }
 
