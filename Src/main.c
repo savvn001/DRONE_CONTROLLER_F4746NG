@@ -371,8 +371,8 @@ int main(void)
 		snprintf(yaw_str, sizeof(yaw_str), "%f", yaw);
 		BSP_LCD_DisplayStringAt(320, 140, (uint8_t *) yaw_str, LEFT_MODE);
 
-		int battery_pct = map(droneBatteryLvl, 0, 4096, 0, 100);
-		float battery_voltage = map(droneBatteryLvl, 0, 4096, 12.6, 11.1);
+		int battery_pct = map(droneBatteryLvl, 3520, 3900, 0, 100);
+		float battery_voltage = map(droneBatteryLvl, 3520, 3900, 12.6, 11.1);
 
 		char battery_lvl_str[3];
 		snprintf(battery_lvl_str, sizeof(battery_lvl_str), "%d", battery_pct);
@@ -876,6 +876,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(ENC3_A_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
@@ -953,7 +960,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	/************* NOTE ***************/
 	//stm32f7xx_hal_gpio.h is changed at line 71, so GPIO_PIN_SET = 1
 
-
 	//Encoder 1 Pin A interrupt
 	if (GPIO_Pin == GPIO_PIN_7) {
 		//Check state of Pin A and Pin B to determine transition
@@ -973,8 +979,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			roll_d += 0.005;
 		}
 	}
-
-
 
 	//Encoder 2 Pin A interrupts on both edges
 	if (GPIO_Pin == GPIO_PIN_4) {
