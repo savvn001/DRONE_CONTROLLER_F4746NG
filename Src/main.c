@@ -58,6 +58,7 @@ LTDC_HandleTypeDef hltdc;
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim13;
 
 UART_HandleTypeDef huart1;
 
@@ -84,6 +85,7 @@ static void MX_DMA2D_Init(void);
 static void MX_FMC_Init(void);
 static void MX_LTDC_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM13_Init(void);
 /* USER CODE BEGIN PFP */
 void packData();
 void unpackAckPayload();
@@ -190,16 +192,17 @@ int main(void)
   MX_FMC_Init();
   MX_LTDC_Init();
   MX_TIM1_Init();
+  MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
 
 
-  	//Init ADC for DMA
-  if( HAL_ADC_Start(&hadc3) == HAL_OK) {
+	//Init ADC for DMA
+	if( HAL_ADC_Start(&hadc3) == HAL_OK) {
 
-	//  HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcArray, 4);
-	//  HAL_TIM_Base_Start(&htim1);
+		//  HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcArray, 4);
+		//  HAL_TIM_Base_Start(&htim1);
 
-  }
+	}
 
 
 
@@ -222,17 +225,21 @@ int main(void)
 
 	//LCD Initialisation functions
 
-//	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
-//	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
-//
-//	BSP_TS_Init(480, 272);
-//
-//	BSP_LCD_Init();
-//	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-//	BSP_LCD_DisplayOn();
-//
-//	BSP_LCD_SelectLayer(0);
-//	BSP_LCD_Clear(LCD_COLOR_BLACK);
+	//	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
+	//	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
+	//
+	//	BSP_TS_Init(480, 272);
+	//
+	//	BSP_LCD_Init();
+	//	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+	//	BSP_LCD_DisplayOn();
+	//
+	//	BSP_LCD_SelectLayer(0);
+	//	BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+
+	HAL_TIM_Base_Start_IT(&htim13);
+
 
   /* USER CODE END 2 */
 
@@ -245,168 +252,149 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//		////////////////////////////////////// Get position of switches ////////////////////////////////////
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//		//SW1
-//		if (HAL_GPIO_ReadPin(GPIOI, GPIO_PIN_2) == GPIO_PIN_SET) {
-//			airmode = 1;
-//		} else {
-//			airmode = 0;
-//		}
-//
-//		//SW2 - Kill switch
-//		if (HAL_GPIO_ReadPin(GPIOI, SW2_Pin) == GPIO_PIN_RESET) {
-//			kill = 1;
-//		} else {
-//			kill = 0;
-//		}
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//		///////////////////////////////////// NRF24 Module Stuff ///////////////////////////////////////////
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//		packData();
-//
-//		//Transmit payload to drone
-//		if (NRF24_write(TxData, 32)) {
-//
-//			NRF24_read(AckPayload, 32);
-//			HAL_UART_Transmit(&huart1,
-//					(uint8_t *) "Transmitted Successfully\r\n",
-//					strlen("Transmitted Successfully\r\n"), 10);
-//
-//			char myDataack[32];
-//			sprintf(myDataack, "AckPayload:  %s \r\n", AckPayload);
-//			HAL_UART_Transmit(&huart1, (uint8_t *) myDataack, strlen(myDataack),
-//					10);
-//			connection = 1;
-//		} else {
-//			connection = 0;
-//		}
-//
-//		unpackAckPayload();
-//
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//		////////////////////////////////////////// LCD UI //////////////////////////////////////////////////
-//		////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//		HAL_Delay(2);
-//
-//		///////////////////////////////// Plotting fixed text //////////////////////////////////////////
-//
-//		BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-//		BSP_LCD_SetTextColor(LCD_COLOR_RED);
-//
-//		BSP_LCD_SetFont(&Font16);
-//		BSP_LCD_DisplayStringAt(14, 60, (uint8_t *) "LONG.", LEFT_MODE);
-//
-//		BSP_LCD_DisplayStringAt(14, 100, (uint8_t *) "LAT.", LEFT_MODE);
-//
-//		BSP_LCD_DisplayStringAt(14, 140, (uint8_t *) "SPEED.", LEFT_MODE);
-//
-//		BSP_LCD_DisplayStringAt(14, 180, (uint8_t *) "ALT.", LEFT_MODE);
-//		//
-//		BSP_LCD_DisplayStringAt(14, 220, (uint8_t *) "THROTTLE ", LEFT_MODE);
-//
-//		BSP_LCD_DisplayStringAt(14, 260, (uint8_t *) "AIRMODE ", LEFT_MODE);
-//
-//		if (airmode) {
-//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "ON ", LEFT_MODE);
-//		} else {
-//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "OFF", LEFT_MODE);
-//		}
-//
-//		BSP_LCD_DisplayStringAt(20, 60, (uint8_t *) "ROLL", RIGHT_MODE);
-//		BSP_LCD_DisplayStringAt(20, 100, (uint8_t *) "PITCH", RIGHT_MODE);
-//		BSP_LCD_DisplayStringAt(20, 140, (uint8_t *) "YAW", RIGHT_MODE);
-//
-//		BSP_LCD_DisplayStringAt(20, 180, (uint8_t *) "P", RIGHT_MODE);
-//		BSP_LCD_DisplayStringAt(20, 200, (uint8_t *) "I", RIGHT_MODE);
-//		BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) "D", RIGHT_MODE);
-//
-//		//Top bar text
-//		BSP_LCD_DisplayStringAt(120, 15, (uint8_t *) "QUAD", RIGHT_MODE);
-//
-//		////////////////////////////// Plotting variable text //////////////////////////////////////////
-//
-//		char longitude_str[6];
-//		snprintf(longitude_str, sizeof(longitude_str), "%f", -1.554715);
-//		BSP_LCD_DisplayStringAt(100, 60, (uint8_t *) longitude_str, LEFT_MODE);
-//
-//		char lattitude_str[6];
-//		snprintf(lattitude_str, sizeof(lattitude_str), "%f", 53.809404);
-//		BSP_LCD_DisplayStringAt(100, 100, (uint8_t *) lattitude_str, LEFT_MODE);
-//
-//		char speed_str[6];
-//		snprintf(speed_str, sizeof(speed_str), "%f", 0.000000);
-//		BSP_LCD_DisplayStringAt(100, 140, (uint8_t *) speed_str, LEFT_MODE);
-//
-//		char alt_str[6];
-//		snprintf(alt_str, sizeof(alt_str), "%f", 94.0000000);
-//		BSP_LCD_DisplayStringAt(100, 180, (uint8_t *) alt_str, LEFT_MODE);
-//
-//		int throttle = map(A1, 880, 3300, 0, 100);
-//
-//		char throttle_str[3];
-//		snprintf(throttle_str, sizeof(throttle_str), "%d", throttle);
-//		BSP_LCD_DisplayStringAt(140, 220, (uint8_t *) throttle_str, LEFT_MODE);
-//
-//		char roll_str[3];
-//		snprintf(roll_str, sizeof(roll_str), "%f", roll);
-//		BSP_LCD_DisplayStringAt(320, 60, (uint8_t *) roll_str, LEFT_MODE);
-//
-//		char pitch_str[3];
-//		snprintf(pitch_str, sizeof(pitch_str), "%f", pitch);
-//		BSP_LCD_DisplayStringAt(320, 100, (uint8_t *) pitch_str, LEFT_MODE);
-//
-//		char yaw_str[3];
-//		snprintf(yaw_str, sizeof(yaw_str), "%f", yaw);
-//		BSP_LCD_DisplayStringAt(320, 140, (uint8_t *) yaw_str, LEFT_MODE);
-//
-//		int battery_pct = map(droneBatteryLvl, 3545, 3800, 0, 100);
-//		float battery_voltage = map(droneBatteryLvl, 3545, 3800, 12.6, 11.1);
-//
-//		char battery_lvl_str[3];
-//		snprintf(battery_lvl_str, sizeof(battery_lvl_str), "%d", battery_pct);
-//		BSP_LCD_DisplayStringAt(85, 15, (uint8_t *) battery_lvl_str,
-//				RIGHT_MODE);
-//
-//		char battery_lvl_str2[5];
-//		snprintf(battery_lvl_str2, sizeof(battery_lvl_str2), "%f V",
-//				battery_voltage);
-//		BSP_LCD_DisplayStringAt(30, 15, (uint8_t *) battery_lvl_str2,
-//				RIGHT_MODE);
-//
-//		//PID
-//		char p_str[4];
-//		snprintf(p_str, sizeof(p_str), "%f", roll_p);
-//		BSP_LCD_DisplayStringAt(40, 180, (uint8_t *) p_str, RIGHT_MODE);
-//
-//		char i_str[4];
-//		snprintf(i_str, sizeof(i_str), "%f", roll_i);
-//		BSP_LCD_DisplayStringAt(40, 200, (uint8_t *) i_str, RIGHT_MODE);
-//
-//		char d_str[4];
-//		snprintf(d_str, sizeof(d_str), "%f", roll_d);
-//		BSP_LCD_DisplayStringAt(40, 220, (uint8_t *) d_str, RIGHT_MODE);
-//
-//		if (!connection) {
-//
-//			BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-//			BSP_LCD_SetTextColor(LCD_COLOR_RED);
-//			BSP_LCD_SetFont(&Font24);
-//
-//			BSP_LCD_DisplayStringAt(0, 120,
-//					(uint8_t *) "NO CONNECTION TO DRONE", CENTER_MODE);
-//			cleared = 0;
-//		} else {
-//			if (!cleared) {
-//				BSP_LCD_Clear(LCD_COLOR_BLACK);
-//			}
-//			cleared = 1;
-//
-//		}
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//		////////////////////////////////////// Get position of switches ////////////////////////////////////
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//
+		//		//SW1
+		//		if (HAL_GPIO_ReadPin(GPIOI, GPIO_PIN_2) == GPIO_PIN_SET) {
+		//			airmode = 1;
+		//		} else {
+		//			airmode = 0;
+		//		}
+		//
+		//		//SW2 - Kill switch
+		//		if (HAL_GPIO_ReadPin(GPIOI, SW2_Pin) == GPIO_PIN_RESET) {
+		//			kill = 1;
+		//		} else {
+		//			kill = 0;
+		//		}
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//		///////////////////////////////////// NRF24 Module Stuff ///////////////////////////////////////////
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//
+		//
+		//
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//		////////////////////////////////////////// LCD UI //////////////////////////////////////////////////
+		//		////////////////////////////////////////////////////////////////////////////////////////////////////
+		//
+		//		HAL_Delay(2);
+		//
+		//		///////////////////////////////// Plotting fixed text //////////////////////////////////////////
+		//
+		//		BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+		//		BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		//
+		//		BSP_LCD_SetFont(&Font16);
+		//		BSP_LCD_DisplayStringAt(14, 60, (uint8_t *) "LONG.", LEFT_MODE);
+		//
+		//		BSP_LCD_DisplayStringAt(14, 100, (uint8_t *) "LAT.", LEFT_MODE);
+		//
+		//		BSP_LCD_DisplayStringAt(14, 140, (uint8_t *) "SPEED.", LEFT_MODE);
+		//
+		//		BSP_LCD_DisplayStringAt(14, 180, (uint8_t *) "ALT.", LEFT_MODE);
+		//		//
+		//		BSP_LCD_DisplayStringAt(14, 220, (uint8_t *) "THROTTLE ", LEFT_MODE);
+		//
+		//		BSP_LCD_DisplayStringAt(14, 260, (uint8_t *) "AIRMODE ", LEFT_MODE);
+		//
+		//		if (airmode) {
+		//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "ON ", LEFT_MODE);
+		//		} else {
+		//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "OFF", LEFT_MODE);
+		//		}
+		//
+		//		BSP_LCD_DisplayStringAt(20, 60, (uint8_t *) "ROLL", RIGHT_MODE);
+		//		BSP_LCD_DisplayStringAt(20, 100, (uint8_t *) "PITCH", RIGHT_MODE);
+		//		BSP_LCD_DisplayStringAt(20, 140, (uint8_t *) "YAW", RIGHT_MODE);
+		//
+		//		BSP_LCD_DisplayStringAt(20, 180, (uint8_t *) "P", RIGHT_MODE);
+		//		BSP_LCD_DisplayStringAt(20, 200, (uint8_t *) "I", RIGHT_MODE);
+		//		BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) "D", RIGHT_MODE);
+		//
+		//		//Top bar text
+		//		BSP_LCD_DisplayStringAt(120, 15, (uint8_t *) "QUAD", RIGHT_MODE);
+		//
+		//		////////////////////////////// Plotting variable text //////////////////////////////////////////
+		//
+		//		char longitude_str[6];
+		//		snprintf(longitude_str, sizeof(longitude_str), "%f", -1.554715);
+		//		BSP_LCD_DisplayStringAt(100, 60, (uint8_t *) longitude_str, LEFT_MODE);
+		//
+		//		char lattitude_str[6];
+		//		snprintf(lattitude_str, sizeof(lattitude_str), "%f", 53.809404);
+		//		BSP_LCD_DisplayStringAt(100, 100, (uint8_t *) lattitude_str, LEFT_MODE);
+		//
+		//		char speed_str[6];
+		//		snprintf(speed_str, sizeof(speed_str), "%f", 0.000000);
+		//		BSP_LCD_DisplayStringAt(100, 140, (uint8_t *) speed_str, LEFT_MODE);
+		//
+		//		char alt_str[6];
+		//		snprintf(alt_str, sizeof(alt_str), "%f", 94.0000000);
+		//		BSP_LCD_DisplayStringAt(100, 180, (uint8_t *) alt_str, LEFT_MODE);
+		//
+		//		int throttle = map(A1, 880, 3300, 0, 100);
+		//
+		//		char throttle_str[3];
+		//		snprintf(throttle_str, sizeof(throttle_str), "%d", throttle);
+		//		BSP_LCD_DisplayStringAt(140, 220, (uint8_t *) throttle_str, LEFT_MODE);
+		//
+		//		char roll_str[3];
+		//		snprintf(roll_str, sizeof(roll_str), "%f", roll);
+		//		BSP_LCD_DisplayStringAt(320, 60, (uint8_t *) roll_str, LEFT_MODE);
+		//
+		//		char pitch_str[3];
+		//		snprintf(pitch_str, sizeof(pitch_str), "%f", pitch);
+		//		BSP_LCD_DisplayStringAt(320, 100, (uint8_t *) pitch_str, LEFT_MODE);
+		//
+		//		char yaw_str[3];
+		//		snprintf(yaw_str, sizeof(yaw_str), "%f", yaw);
+		//		BSP_LCD_DisplayStringAt(320, 140, (uint8_t *) yaw_str, LEFT_MODE);
+		//
+		//		int battery_pct = map(droneBatteryLvl, 3545, 3800, 0, 100);
+		//		float battery_voltage = map(droneBatteryLvl, 3545, 3800, 12.6, 11.1);
+		//
+		//		char battery_lvl_str[3];
+		//		snprintf(battery_lvl_str, sizeof(battery_lvl_str), "%d", battery_pct);
+		//		BSP_LCD_DisplayStringAt(85, 15, (uint8_t *) battery_lvl_str,
+		//				RIGHT_MODE);
+		//
+		//		char battery_lvl_str2[5];
+		//		snprintf(battery_lvl_str2, sizeof(battery_lvl_str2), "%f V",
+		//				battery_voltage);
+		//		BSP_LCD_DisplayStringAt(30, 15, (uint8_t *) battery_lvl_str2,
+		//				RIGHT_MODE);
+		//
+		//		//PID
+		//		char p_str[4];
+		//		snprintf(p_str, sizeof(p_str), "%f", roll_p);
+		//		BSP_LCD_DisplayStringAt(40, 180, (uint8_t *) p_str, RIGHT_MODE);
+		//
+		//		char i_str[4];
+		//		snprintf(i_str, sizeof(i_str), "%f", roll_i);
+		//		BSP_LCD_DisplayStringAt(40, 200, (uint8_t *) i_str, RIGHT_MODE);
+		//
+		//		char d_str[4];
+		//		snprintf(d_str, sizeof(d_str), "%f", roll_d);
+		//		BSP_LCD_DisplayStringAt(40, 220, (uint8_t *) d_str, RIGHT_MODE);
+		//
+		//		if (!connection) {
+		//
+		//			BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
+		//			BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		//			BSP_LCD_SetFont(&Font24);
+		//
+		//			BSP_LCD_DisplayStringAt(0, 120,
+		//					(uint8_t *) "NO CONNECTION TO DRONE", CENTER_MODE);
+		//			cleared = 0;
+		//		} else {
+		//			if (!cleared) {
+		//				BSP_LCD_Clear(LCD_COLOR_BLACK);
+		//			}
+		//			cleared = 1;
+		//
+		//		}
 
 		//		BSP_TS_GetState(&ts);
 		//		sprintf(xTouchStr, "X: %3d", ts.touchX[0]);
@@ -789,6 +777,37 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
+  * @brief TIM13 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM13_Init(void)
+{
+
+  /* USER CODE BEGIN TIM13_Init 0 */
+
+  /* USER CODE END TIM13_Init 0 */
+
+  /* USER CODE BEGIN TIM13_Init 1 */
+
+  /* USER CODE END TIM13_Init 1 */
+  htim13.Instance = TIM13;
+  htim13.Init.Prescaler = 1000-1;
+  htim13.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim13.Init.Period = 108-1;
+  htim13.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim13.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim13) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM13_Init 2 */
+
+  /* USER CODE END TIM13_Init 2 */
 
 }
 
@@ -1214,15 +1233,34 @@ void       HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
 
 
 
-	    }
+	}
 
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
-	if (htim->Instance == TIM6) {
+	if (htim->Instance == TIM13) {
+		packData();
 
-	    }
+		//Transmit payload to drone
+		if (NRF24_write(TxData, 32)) {
+
+			NRF24_read(AckPayload, 32);
+			HAL_UART_Transmit(&huart1,
+					(uint8_t *) "Transmitted Successfully\r\n",
+					strlen("Transmitted Successfully\r\n"), 10);
+
+			char myDataack[32];
+			sprintf(myDataack, "AckPayload:  %s \r\n", AckPayload);
+			HAL_UART_Transmit(&huart1, (uint8_t *) myDataack, strlen(myDataack),
+					10);
+			connection = 1;
+		} else {
+			connection = 0;
+		}
+
+		unpackAckPayload();
+	}
 
 }
 
