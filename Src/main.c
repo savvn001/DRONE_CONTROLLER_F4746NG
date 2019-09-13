@@ -98,7 +98,7 @@ int8_t read_rotary_3();
 /* USER CODE BEGIN 0 */
 
 //NRF24 Module variables
-uint64_t TxpipeAddrs = 0x11223344AA;
+uint64_t TxpipeAddrs = 0x44332211AA;//0x11223344AA;
 char TxData[32];
 char AckPayload[32];
 
@@ -196,29 +196,31 @@ int main(void)
   	//Init ADC for DMA
   if( HAL_ADC_Start(&hadc3) == HAL_OK) {
 
-	  HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcArray, 4);
-	  HAL_TIM_Base_Start(&htim1);
+	//  HAL_ADC_Start_DMA(&hadc3, (uint32_t *)adcArray, 4);
+	//  HAL_TIM_Base_Start(&htim1);
 
   }
 
 
 
-//	//NRF24 Module Initialization functions
-//	DWT_Init();
-//	NRF24_begin(GPIOA, nrf_CSN_PIN, nrf_CE_PIN, hspi2);
-//	nrf24_DebugUART_Init(huart1);
-//
-//	//**** TRANSMIT - ACK ****//
-//	NRF24_stopListening();
-//	NRF24_openWritingPipe(TxpipeAddrs);
-//
-//	printRadioSettings();
-//
-//	for (int i = 0; i < 31; ++i) {
-//		TxData[i] = 0;
-//	}
+	//NRF24 Module Initialisation functions
 
-	//LCD Initialization functions
+
+	DWT_Init(); //For uS delays
+	NRF24_begin(GPIOA, nrf_CSN_PIN, nrf_CE_PIN, hspi2);
+	nrf24_DebugUART_Init(huart1);
+
+	//**** TRANSMIT - ACK ****//
+	NRF24_stopListening();
+	NRF24_openWritingPipe(TxpipeAddrs);
+
+	printRadioSettings();
+
+	for (int i = 0; i < 31; ++i) {
+		TxData[i] = 0;
+	}
+
+	//LCD Initialisation functions
 
 //	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
 //	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
@@ -835,7 +837,7 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 4, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
 }
