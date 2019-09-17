@@ -10,7 +10,7 @@ RM := rm -rf
 -include sources.mk
 -include Startup/subdir.mk
 -include Src/subdir.mk
--include GUI\ files/subdir.mk
+-include GUI/subdir.mk
 -include Drivers/STM32F7xx_HAL_Driver/Src/subdir.mk
 -include Drivers/subdir.mk
 -include subdir.mk

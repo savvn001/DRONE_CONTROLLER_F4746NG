@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "../Drivers/MY_NRF24.h"
 #include "../Drivers/dwt_delay.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -107,7 +108,6 @@ char AckPayload[32];
 int counter = 0;
 
 //Touch screen variables
-TS_StateTypeDef ts;
 
 char xTouchStr[10];
 
