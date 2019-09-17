@@ -36,7 +36,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "../GUI/fonts.h"
+#include "fonts.h"
 
 /** @addtogroup Utilities
   * @{

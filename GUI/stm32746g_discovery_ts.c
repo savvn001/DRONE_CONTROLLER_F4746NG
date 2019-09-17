@@ -72,7 +72,7 @@
 EndDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "../GUI/stm32746g_discovery_ts.h"
+#include "stm32746g_discovery_ts.h"
 
 /** @addtogroup BSP
   * @{

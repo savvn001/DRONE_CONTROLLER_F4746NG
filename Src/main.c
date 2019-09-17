@@ -20,11 +20,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "../Drivers/MY_NRF24.h"
 #include "../Drivers/dwt_delay.h"
+#include "../Drivers/UI.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -65,6 +67,8 @@ UART_HandleTypeDef huart1;
 
 SDRAM_HandleTypeDef hsdram1;
 
+osThreadId DrawUIHandle;
+osThreadId NRFTXHandle;
 /* USER CODE BEGIN PV */
 
 uint32_t adcArray[4];
@@ -87,6 +91,9 @@ static void MX_FMC_Init(void);
 static void MX_LTDC_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM13_Init(void);
+void StartDrawUI(void const * argument);
+void startNRFTX(void const * argument);
+
 /* USER CODE BEGIN PFP */
 void packData();
 void unpackAckPayload();
@@ -94,7 +101,7 @@ float map(int x, int in_min, int in_max, int out_min, int out_max);
 int8_t read_rotary_1();
 int8_t read_rotary_2();
 int8_t read_rotary_3();
-
+void sendPayload();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -108,6 +115,7 @@ char AckPayload[32];
 int counter = 0;
 
 //Touch screen variables
+TS_StateTypeDef ts;
 
 char xTouchStr[10];
 
@@ -134,9 +142,9 @@ GPS_typedef GPS;
 
 int droneBatteryLvl = 3900;
 
-float roll = 0;
-float pitch = 0;
-float yaw = 0;
+float roll_rx = 0;
+float pitch_rx = 0;
+float yaw_rx = 0;
 
 float roll_p = 0;
 float roll_i = 0;
@@ -223,188 +231,53 @@ int main(void)
 		TxData[i] = 0;
 	}
 
-	//LCD Initialisation functions
-
-	//	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
-	//	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
-	//
-	//	BSP_TS_Init(480, 272);
-	//
-	//	BSP_LCD_Init();
-	//	BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-	//	BSP_LCD_DisplayOn();
-	//
-	//	BSP_LCD_SelectLayer(0);
-	//	BSP_LCD_Clear(LCD_COLOR_BLACK);
-
-
-	HAL_TIM_Base_Start_IT(&htim13);
+	initLCD();
 
 
   /* USER CODE END 2 */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of DrawUI */
+  osThreadDef(DrawUI, StartDrawUI, osPriorityNormal, 0, 128);
+  DrawUIHandle = osThreadCreate(osThread(DrawUI), NULL);
+
+  /* definition and creation of NRFTX */
+  osThreadDef(NRFTX, startNRFTX, osPriorityIdle, 0, 128);
+  NRFTXHandle = osThreadCreate(osThread(NRFTX), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+  
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	while (1)
-	{
+  while (1)
+  {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//		////////////////////////////////////// Get position of switches ////////////////////////////////////
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//
-		//		//SW1
-		//		if (HAL_GPIO_ReadPin(GPIOI, GPIO_PIN_2) == GPIO_PIN_SET) {
-		//			airmode = 1;
-		//		} else {
-		//			airmode = 0;
-		//		}
-		//
-		//		//SW2 - Kill switch
-		//		if (HAL_GPIO_ReadPin(GPIOI, SW2_Pin) == GPIO_PIN_RESET) {
-		//			kill = 1;
-		//		} else {
-		//			kill = 0;
-		//		}
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//		///////////////////////////////////// NRF24 Module Stuff ///////////////////////////////////////////
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//
-		//
-		//
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//		////////////////////////////////////////// LCD UI //////////////////////////////////////////////////
-		//		////////////////////////////////////////////////////////////////////////////////////////////////////
-		//
-		//		HAL_Delay(2);
-		//
-		//		///////////////////////////////// Plotting fixed text //////////////////////////////////////////
-		//
-		//		BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-		//		BSP_LCD_SetTextColor(LCD_COLOR_RED);
-		//
-		//		BSP_LCD_SetFont(&Font16);
-		//		BSP_LCD_DisplayStringAt(14, 60, (uint8_t *) "LONG.", LEFT_MODE);
-		//
-		//		BSP_LCD_DisplayStringAt(14, 100, (uint8_t *) "LAT.", LEFT_MODE);
-		//
-		//		BSP_LCD_DisplayStringAt(14, 140, (uint8_t *) "SPEED.", LEFT_MODE);
-		//
-		//		BSP_LCD_DisplayStringAt(14, 180, (uint8_t *) "ALT.", LEFT_MODE);
-		//		//
-		//		BSP_LCD_DisplayStringAt(14, 220, (uint8_t *) "THROTTLE ", LEFT_MODE);
-		//
-		//		BSP_LCD_DisplayStringAt(14, 260, (uint8_t *) "AIRMODE ", LEFT_MODE);
-		//
-		//		if (airmode) {
-		//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "ON ", LEFT_MODE);
-		//		} else {
-		//			BSP_LCD_DisplayStringAt(100, 260, (uint8_t *) "OFF", LEFT_MODE);
-		//		}
-		//
-		//		BSP_LCD_DisplayStringAt(20, 60, (uint8_t *) "ROLL", RIGHT_MODE);
-		//		BSP_LCD_DisplayStringAt(20, 100, (uint8_t *) "PITCH", RIGHT_MODE);
-		//		BSP_LCD_DisplayStringAt(20, 140, (uint8_t *) "YAW", RIGHT_MODE);
-		//
-		//		BSP_LCD_DisplayStringAt(20, 180, (uint8_t *) "P", RIGHT_MODE);
-		//		BSP_LCD_DisplayStringAt(20, 200, (uint8_t *) "I", RIGHT_MODE);
-		//		BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) "D", RIGHT_MODE);
-		//
-		//		//Top bar text
-		//		BSP_LCD_DisplayStringAt(120, 15, (uint8_t *) "QUAD", RIGHT_MODE);
-		//
-		//		////////////////////////////// Plotting variable text //////////////////////////////////////////
-		//
-		//		char longitude_str[6];
-		//		snprintf(longitude_str, sizeof(longitude_str), "%f", -1.554715);
-		//		BSP_LCD_DisplayStringAt(100, 60, (uint8_t *) longitude_str, LEFT_MODE);
-		//
-		//		char lattitude_str[6];
-		//		snprintf(lattitude_str, sizeof(lattitude_str), "%f", 53.809404);
-		//		BSP_LCD_DisplayStringAt(100, 100, (uint8_t *) lattitude_str, LEFT_MODE);
-		//
-		//		char speed_str[6];
-		//		snprintf(speed_str, sizeof(speed_str), "%f", 0.000000);
-		//		BSP_LCD_DisplayStringAt(100, 140, (uint8_t *) speed_str, LEFT_MODE);
-		//
-		//		char alt_str[6];
-		//		snprintf(alt_str, sizeof(alt_str), "%f", 94.0000000);
-		//		BSP_LCD_DisplayStringAt(100, 180, (uint8_t *) alt_str, LEFT_MODE);
-		//
-		//		int throttle = map(A1, 880, 3300, 0, 100);
-		//
-		//		char throttle_str[3];
-		//		snprintf(throttle_str, sizeof(throttle_str), "%d", throttle);
-		//		BSP_LCD_DisplayStringAt(140, 220, (uint8_t *) throttle_str, LEFT_MODE);
-		//
-		//		char roll_str[3];
-		//		snprintf(roll_str, sizeof(roll_str), "%f", roll);
-		//		BSP_LCD_DisplayStringAt(320, 60, (uint8_t *) roll_str, LEFT_MODE);
-		//
-		//		char pitch_str[3];
-		//		snprintf(pitch_str, sizeof(pitch_str), "%f", pitch);
-		//		BSP_LCD_DisplayStringAt(320, 100, (uint8_t *) pitch_str, LEFT_MODE);
-		//
-		//		char yaw_str[3];
-		//		snprintf(yaw_str, sizeof(yaw_str), "%f", yaw);
-		//		BSP_LCD_DisplayStringAt(320, 140, (uint8_t *) yaw_str, LEFT_MODE);
-		//
-		//		int battery_pct = map(droneBatteryLvl, 3545, 3800, 0, 100);
-		//		float battery_voltage = map(droneBatteryLvl, 3545, 3800, 12.6, 11.1);
-		//
-		//		char battery_lvl_str[3];
-		//		snprintf(battery_lvl_str, sizeof(battery_lvl_str), "%d", battery_pct);
-		//		BSP_LCD_DisplayStringAt(85, 15, (uint8_t *) battery_lvl_str,
-		//				RIGHT_MODE);
-		//
-		//		char battery_lvl_str2[5];
-		//		snprintf(battery_lvl_str2, sizeof(battery_lvl_str2), "%f V",
-		//				battery_voltage);
-		//		BSP_LCD_DisplayStringAt(30, 15, (uint8_t *) battery_lvl_str2,
-		//				RIGHT_MODE);
-		//
-		//		//PID
-		//		char p_str[4];
-		//		snprintf(p_str, sizeof(p_str), "%f", roll_p);
-		//		BSP_LCD_DisplayStringAt(40, 180, (uint8_t *) p_str, RIGHT_MODE);
-		//
-		//		char i_str[4];
-		//		snprintf(i_str, sizeof(i_str), "%f", roll_i);
-		//		BSP_LCD_DisplayStringAt(40, 200, (uint8_t *) i_str, RIGHT_MODE);
-		//
-		//		char d_str[4];
-		//		snprintf(d_str, sizeof(d_str), "%f", roll_d);
-		//		BSP_LCD_DisplayStringAt(40, 220, (uint8_t *) d_str, RIGHT_MODE);
-		//
-		//		if (!connection) {
-		//
-		//			BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-		//			BSP_LCD_SetTextColor(LCD_COLOR_RED);
-		//			BSP_LCD_SetFont(&Font24);
-		//
-		//			BSP_LCD_DisplayStringAt(0, 120,
-		//					(uint8_t *) "NO CONNECTION TO DRONE", CENTER_MODE);
-		//			cleared = 0;
-		//		} else {
-		//			if (!cleared) {
-		//				BSP_LCD_Clear(LCD_COLOR_BLACK);
-		//			}
-		//			cleared = 1;
-		//
-		//		}
-
-		//		BSP_TS_GetState(&ts);
-		//		sprintf(xTouchStr, "X: %3d", ts.touchX[0]);
-		//		BSP_LCD_DisplayStringAt(20, 20, (uint8_t *) xTouchStr, LEFT_MODE);
-		//
-		//		sprintf(xTouchStr, "Y: %3d", ts.touchY[0]);
-		//		BSP_LCD_DisplayStringAt(20, 60, (uint8_t *) xTouchStr, LEFT_MODE);
-
-	}
-
+  }
   /* USER CODE END 3 */
 }
 
@@ -976,10 +849,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(ENC3_A_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
@@ -1046,12 +919,16 @@ void unpackAckPayload() {
 	if (AckPayload[0] == 0x00) {
 
 		droneBatteryLvl = (AckPayload[1] & 0xFF) | (AckPayload[2] << 8);
-		int16_t roll_rx = (AckPayload[3] & 0xFF) | (AckPayload[4] << 8);
-		roll = roll_rx / 100;
+		roll_rx = (AckPayload[3] & 0xFF) | (AckPayload[4] << 8);
+		roll_rx = roll_rx / 100;
 
 
-		int16_t pitch_rx = (AckPayload[5] & 0xFF) | (AckPayload[6] << 8);
-		pitch = pitch_rx / 100;
+		pitch_rx = (AckPayload[5] & 0xFF) | (AckPayload[6] << 8);
+		pitch_rx = pitch_rx / 100;
+
+
+		yaw_rx = (AckPayload[7] & 0xFF) | (AckPayload[8] << 8);
+		yaw_rx = yaw_rx / 100;
 	}
 
 	//This is packet 1, only sent every
@@ -1237,9 +1114,8 @@ void       HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
 
 }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+void sendPayload(){
 
-	if (htim->Instance == TIM13) {
 		packData();
 
 		//Transmit payload to drone
@@ -1260,12 +1136,72 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		}
 
 		unpackAckPayload();
-	}
+
 
 }
 
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDrawUI */
+/**
+  * @brief  Function implementing the DrawUI thread.
+  * @param  argument: Not used 
+  * @retval None
+  */
+/* USER CODE END Header_StartDrawUI */
+void StartDrawUI(void const * argument)
+{
+
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	  drawMainScreen(connection);
+    osDelay(4);
+  }
+  /* USER CODE END 5 */ 
+}
+
+/* USER CODE BEGIN Header_startNRFTX */
+/**
+* @brief Function implementing the NRFTX thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_startNRFTX */
+void startNRFTX(void const * argument)
+{
+  /* USER CODE BEGIN startNRFTX */
+  /* Infinite loop */
+  for(;;)
+  {
+	  sendPayload();
+    osDelay(1);
+  }
+  /* USER CODE END startNRFTX */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM3 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM3) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.

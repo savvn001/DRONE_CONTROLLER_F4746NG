@@ -43,9 +43,9 @@
 #endif   
    
 /* Includes ------------------------------------------------------------------*/
-#include "../GUI/stm32746g_discovery.h"
+#include "stm32746g_discovery.h"
 /* Include touch screen FT5336 component Driver */
-#include "../GUI/ft5336.h"
+#include "ft5336.h"
    
 /** @addtogroup BSP
   * @{

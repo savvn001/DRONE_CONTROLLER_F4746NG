@@ -80,10 +80,9 @@ extern sFONT Font12;
 extern sFONT Font8;
 
 
-//MY CUSTOM FONTS HERE
-extern sFONT FontAvenir20;
-extern sFONT FontAvenir16;
 extern sFONT FontAvenir12;
+extern sFONT FontAvenir16;
+extern sFONT FontAvenir20;
 
 /**
   * @}

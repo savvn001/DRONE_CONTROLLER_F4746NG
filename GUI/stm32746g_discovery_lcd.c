@@ -85,9 +85,8 @@
 EndDependencies */
 
 /* Includes ------------------------------------------------------------------*/
-#include "../GUI/stm32746g_discovery_lcd.h"
-
-#include "../GUI/fonts.h"
+#include "stm32746g_discovery_lcd.h"
+#include "fonts.h"
 //#include "font24.c"
 //#include "font20.c"
 //#include "font16.c"

@@ -45,13 +45,13 @@
 /* Includes ------------------------------------------------------------------*/
 /* Include LCD component Driver */
 /* LCD RK043FN48H-CT672B 4,3" 480x272 pixels */
-#include "../GUI/rk043fn48h.h"
+#include "rk043fn48h.h"
 
 /* Include SDRAM Driver */
-#include "../GUI/stm32746g_discovery_sdram.h"
+#include "stm32746g_discovery_sdram.h"
  
-#include "../GUI/stm32746g_discovery.h"
-#include "../GUI/fonts.h"
+#include "stm32746g_discovery.h"
+#include "fonts.h"
   
 #include "stm32f7xx_hal_ltdc.h"
 /** @addtogroup BSP

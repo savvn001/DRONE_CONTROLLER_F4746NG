@@ -13,9 +13,13 @@
 #include "../GUI/stm32746g_discovery_lcd.h"
 #include "../GUI/stm32746g_discovery_sdram.h"
 #include "../GUI/stm32746g_discovery_ts.h"
+#include <stdio.h>
+#include <stdbool.h>
 
+#include <stdlib.h>
+#include <string.h>
 void initLCD();
-void drawMainScreen();
-
-
+void drawMainScreen(bool cnt);
+void float_to_string(float f, char r[]);
+int n_tu(int number, int count);
 #endif /* UI_H_ */
