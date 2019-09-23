@@ -66,13 +66,9 @@ Src/main.o: ../Src/main.c ../Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- ../Src/../Drivers/MY_NRF24.h ../Src/../Drivers/nRF24L01.h \
- ../Src/../Drivers/dwt_delay.h ../Src/../Drivers/UI.h \
- ../Src/../Drivers/../GUI/stm32746g_discovery.h \
- ../Src/../Drivers/../GUI/stm32746g_discovery_lcd.h \
- ../Src/../Drivers/../GUI/stm32746g_discovery_sdram.h \
- ../Src/../Drivers/../GUI/stm32746g_discovery_ts.h
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h ../Inc/adc.h \
+ ../Inc/main.h ../Inc/crc.h ../Inc/dma.h ../Inc/dma2d.h ../Inc/ltdc.h \
+ ../Inc/spi.h ../Inc/tim.h ../Inc/usart.h ../Inc/gpio.h ../Inc/fmc.h
 
 ../Inc/main.h:
 
@@ -212,18 +208,24 @@ Src/main.o: ../Src/main.c ../Inc/main.h \
 
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 
-../Src/../Drivers/MY_NRF24.h:
+../Inc/adc.h:
 
-../Src/../Drivers/nRF24L01.h:
+../Inc/main.h:
 
-../Src/../Drivers/dwt_delay.h:
+../Inc/crc.h:
 
-../Src/../Drivers/UI.h:
+../Inc/dma.h:
 
-../Src/../Drivers/../GUI/stm32746g_discovery.h:
+../Inc/dma2d.h:
 
-../Src/../Drivers/../GUI/stm32746g_discovery_lcd.h:
+../Inc/ltdc.h:
 
-../Src/../Drivers/../GUI/stm32746g_discovery_sdram.h:
+../Inc/spi.h:
 
-../Src/../Drivers/../GUI/stm32746g_discovery_ts.h:
+../Inc/tim.h:
+
+../Inc/usart.h:
+
+../Inc/gpio.h:
+
+../Inc/fmc.h:
