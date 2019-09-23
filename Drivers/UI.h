@@ -33,12 +33,12 @@ struct Misc_str Misc;
 
 
 
-void initLCD();
+void initLCD(struct GPS_str GPS);
 void drawUI();
 void drawIMUScreen();
 void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc) ;
 
-void float_to_string(float f, char r[]);
+bool float_to_string(float f, char r[]);
 int n_tu(int number, int count);
 float map(int x, int in_min, int in_max, int out_min, int out_max);
 #endif /* UI_H_ */

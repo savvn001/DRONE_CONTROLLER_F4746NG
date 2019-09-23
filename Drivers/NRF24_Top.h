@@ -14,18 +14,22 @@
 #include "../Drivers/dwt_delay.h"
 #include "../Drivers/unpack_variables.h"
 #include <stdbool.h>
+#include <math.h>
 
 SPI_HandleTypeDef none;
 
 //NRF24 Module variables
 uint64_t TxpipeAddrs = 0x11223344AA;
 char TxData[32];
-char AckPayload[32];
+uint8_t AckPayload[32];
 
 void packData(uint32_t * array, bool airmode, bool kill);
 void unpackAckPayload(struct GPS_str GPS, struct IMU_str IMU);
 
-void NRF24_init() {
+void unpackAckPayload_0();
+void unpackAckPayload_1();
+
+void NRF24_init(struct GPS_str GPS) {
 
 	DWT_Init(); //For uS delays
 	NRF24_begin(GPIOA, nrf_CSN_PIN, nrf_CE_PIN, none);
@@ -39,7 +43,24 @@ void NRF24_init() {
 
 	for (int i = 0; i < 31; ++i) {
 		TxData[i] = 0;
+		AckPayload[i] = 0;
 	}
+
+
+	GPS.Altitude = 0.00;
+	GPS.Day = 0;
+	GPS.Hours = 0;
+	GPS.Latitude = 0.00;
+	GPS.Longitude = 0x0000;
+	GPS.Minutes = 0;
+	GPS.Month = 0;
+	GPS.Seconds = 0;
+	GPS.Speed = 0.00;
+	GPS.Year = 0;
+	GPS.fix_quality = 0;
+	GPS.sattelite_no = 0;
+
+
 }
 
 bool sendPayload() {
@@ -48,6 +69,26 @@ bool sendPayload() {
 	if (NRF24_write(TxData, 32)) {
 
 		NRF24_read(AckPayload, 32);
+
+		//Check to see which packet we received
+		switch (AckPayload[0]) {
+
+		//This is first packet containing battery and IMU info
+		case 0x03:
+
+			unpackAckPayload_0();
+
+			break;
+
+			//Second packet containing the GPS info
+		case 0xFF:
+
+			unpackAckPayload_1();
+
+			break;
+		default:
+			break;
+		}
 
 		return 1;
 	} else {
@@ -94,65 +135,73 @@ void packData(uint32_t * array, bool airmode, bool kill) {
 		TxData[8] &= ~(1 << 1);
 	}
 
-//	uint16_t roll_p_tx = round(roll_p * 100);
-//	uint16_t roll_i_tx = round(roll_i * 100) ;
-//	uint16_t roll_d_tx = round(roll_d * 100) ;
-//
-//	TxData[9] = roll_p_tx;
-//	TxData[10] = roll_p_tx >> 8;
-//
-//	TxData[11] = roll_i_tx;
-//	TxData[12] = roll_i_tx >> 8;
-//
-//	TxData[13] = roll_d_tx;
-//	TxData[14] = roll_d_tx >> 8;
+	//	uint16_t roll_p_tx = round(roll_p * 100);
+	//	uint16_t roll_i_tx = round(roll_i * 100) ;
+	//	uint16_t roll_d_tx = round(roll_d * 100) ;
+	//
+	//	TxData[9] = roll_p_tx;
+	//	TxData[10] = roll_p_tx >> 8;
+	//
+	//	TxData[11] = roll_i_tx;
+	//	TxData[12] = roll_i_tx >> 8;
+	//
+	//	TxData[13] = roll_d_tx;
+	//	TxData[14] = roll_d_tx >> 8;
 
 }
 
-void unpackAckPayload(struct GPS_str GPS, struct IMU_str IMU) {
+void unpackAckPayload_0() {
 
-	//Check if this is packet 0 or packet 1
-	if (AckPayload[0] == 0x00) {
+	IMU.batteryLevel = (AckPayload[1] & 0xFF) | (AckPayload[2] << 8);
 
-		IMU.batteryLevel = (AckPayload[1] & 0xFF) | (AckPayload[2] << 8);
+	int16_t roll_rx = (AckPayload[3] & 0xFF) | (AckPayload[4] << 8);
+	IMU.roll = roll_rx / 100;
 
-		int16_t roll_rx = (AckPayload[3] & 0xFF) | (AckPayload[4] << 8);
-		IMU.roll = roll_rx / 100;
+	int16_t pitch_rx = (AckPayload[5] & 0xFF) | (AckPayload[6] << 8);
+	IMU.pitch = pitch_rx / 100;
 
-		int16_t pitch_rx = (AckPayload[5] & 0xFF) | (AckPayload[6] << 8);
-		IMU.pitch = pitch_rx / 100;
+	int16_t yaw_rx_ = (AckPayload[7] & 0xFF) | (AckPayload[8] << 8);
+	IMU.yaw = yaw_rx_ / 100;
+}
 
-		int16_t yaw_rx_ = (AckPayload[7] & 0xFF) | (AckPayload[8] << 8);
-		IMU.yaw = yaw_rx_ / 100;
-	}
-	//This is packet 1, only sent every 1s
-	if (AckPayload[0] == 0xFF) {
+void unpackAckPayload_1() {
 
-		//All the 1 byte values
-		GPS.sattelite_no = AckPayload[1];
-		GPS.fix_quality = AckPayload[2];
-		GPS.Day = AckPayload[3];
-		GPS.Month = AckPayload[4];
-		GPS.Year = AckPayload[5];
-		GPS.Hours = AckPayload[6];
-		GPS.Minutes = AckPayload[7];
-		GPS.Seconds = AckPayload[8];
-		//GPS speed
-		uint16_t speed_rx = (AckPayload[9] & 0xFF) | (AckPayload[10] << 8);
-		GPS.Speed = speed_rx / 100;
+	//All the 1 byte values
+	GPS.sattelite_no = AckPayload[1];
+	GPS.fix_quality = AckPayload[2];
+	GPS.Day = AckPayload[3];
+	GPS.Month = AckPayload[4];
+	GPS.Year = AckPayload[5];
+	GPS.Hours = AckPayload[6];
+	GPS.Minutes = AckPayload[7];
+	GPS.Seconds = AckPayload[8];
+	//GPS speed
+	uint16_t speed_rx = (AckPayload[9] & 0xFF) | (AckPayload[10] << 8);
+	GPS.Speed = speed_rx / 100;
 
-		//Longitude, latitude and altitude
-		GPS.Longitude = (AckPayload[11] & 0xFFFF) | (AckPayload[12] << 8)
-				| (AckPayload[13] << 16) | (AckPayload[14] << 24);
+	//Longitude, latitude and altitude
+	unsigned char temp[4] = {0,0,0,0};
 
-		GPS.Latitude = (AckPayload[15] & 0xFFFF) | (AckPayload[16] << 8)
-				| (AckPayload[17] << 16) | (AckPayload[18] << 24);
+	temp[0] = AckPayload[11];
+	temp[1] = AckPayload[12];
+	temp[2] = AckPayload[13];
+	temp[3] = AckPayload[14];
 
-		GPS.Latitude = (AckPayload[19] & 0xFFFF) | (AckPayload[20] << 8)
-				| (AckPayload[21] << 16) | (AckPayload[22] << 24);
+	memcpy(&GPS.Longitude, temp, sizeof(float));
 
-	}
+	temp[0] = AckPayload[15];
+	temp[1] = AckPayload[16];
+	temp[2] = AckPayload[17];
+	temp[3] = AckPayload[18];
 
+	memcpy(&GPS.Latitude, temp, sizeof(float));
+
+	temp[0] = AckPayload[19];
+	temp[1] = AckPayload[20];
+	temp[2] = AckPayload[21];
+	temp[3] = AckPayload[22];
+
+	memcpy(&GPS.Altitude, temp, sizeof(float));
 }
 
 #endif /* NRF24_TOP_H_ */

@@ -90,32 +90,8 @@ TS_StateTypeDef ts;
 
 char xTouchStr[10];
 
-//GPS module data struct
-typedef struct {
-
-	float speed;
-	float longitude;
-	float latitude;
-	float altitude;
-	float course;
-	char satellites;
-	char day;
-	char month;
-	char year;
-	char second;
-	char minute;
-	char hour;
-
-} GPS_typedef;
-
-GPS_typedef GPS;
 
 
-int16_t droneBatteryLvl = 3900;
-
-float roll_rx = 0;
-float pitch_rx = 0;
-float yaw_rx = 0;
 
 float roll_p = 0;
 float roll_i = 0;
@@ -173,6 +149,7 @@ int main(void)
 
 
 	//NRF24 Module Initialisation functions
+
 
 
 

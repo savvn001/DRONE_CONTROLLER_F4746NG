@@ -110,11 +110,11 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* definition and creation of DrawUI */
-  osThreadDef(DrawUI, StartDrawUI, osPriorityNormal, 0, 128);
+  osThreadDef(DrawUI, StartDrawUI, osPriorityNormal, 0, 1024);
   DrawUIHandle = osThreadCreate(osThread(DrawUI), NULL);
 
   /* definition and creation of NRFTX */
-  osThreadDef(NRFTX, startNRFTX, osPriorityNormal, 0, 128);
+  osThreadDef(NRFTX, startNRFTX, osPriorityRealtime, 0, 512);
   NRFTXHandle = osThreadCreate(osThread(NRFTX), NULL);
 
   /* definition and creation of ADC */
@@ -138,8 +138,9 @@ void StartDrawUI(void const * argument)
 {
 
   /* USER CODE BEGIN StartDrawUI */
-
-	initLCD();
+	xSemaphoreTake(RxDataMutexHandle, portMAX_DELAY);
+	initLCD(GPS);
+	xSemaphoreGive(RxDataMutexHandle);
 
 	/* Infinite loop */
 	for (;;) {
@@ -163,25 +164,19 @@ void StartDrawUI(void const * argument)
 void startNRFTX(void const * argument)
 {
   /* USER CODE BEGIN startNRFTX */
-
-	NRF24_init();
-
-
+	xSemaphoreTake(RxDataMutexHandle, portMAX_DELAY);
+	NRF24_init(GPS);
+	xSemaphoreGive(RxDataMutexHandle);
 	/* Infinite loop */
 	for (;;) {
 
 		xSemaphoreTake(SwDataMutexHandle, portMAX_DELAY);
 		packData(adcArray, Misc.airmode, Misc.kill);
 		xSemaphoreGive(SwDataMutexHandle);
+
+		xSemaphoreTake(RxDataMutexHandle, portMAX_DELAY);
 		Misc.connection = sendPayload();
-
-		if (Misc.connection) {
-
-			xSemaphoreTake(RxDataMutexHandle, portMAX_DELAY);
-			unpackAckPayload(GPS, IMU);
-			xSemaphoreGive(RxDataMutexHandle);
-
-		}
+		xSemaphoreGive(RxDataMutexHandle);
 
 		osDelay(1);
 	}

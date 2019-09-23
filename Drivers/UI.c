@@ -6,14 +6,14 @@
  */
 
 #include "UI.h"
-
+#include  "time.h"
 #include "../GUI/Images/icons.h"
-
+#include <math.h>
 
 //Touch screen variables
 TS_StateTypeDef ts;
 bool cleared = 0;
-void initLCD() {
+void initLCD(struct GPS_str GPS) {
 
 	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
 	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
@@ -32,13 +32,29 @@ void initLCD() {
 
 
 
+	GPS.Altitude = 0.00;
+	GPS.Day = 0;
+	GPS.Hours = 0;
+	GPS.Latitude = 0.00;
+	GPS.Longitude = 0x0000;
+	GPS.Minutes = 0;
+	GPS.Month = 0;
+	GPS.Seconds = 0;
+	GPS.Speed = 0.00;
+	GPS.Year = 0;
+	GPS.fix_quality = 0;
+	GPS.sattelite_no = 0;
+
+
+
 }
 
 char latt_str[48];
 char long_str[10];
 char speed_str[48];
 char alt_str[48];
-
+char sattelite_no_str[5];
+char fix_str[48];
 char throttle_str[2];
 
 char quad_battery_str[48];
@@ -84,8 +100,10 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	BSP_LCD_DisplayStringAt(30, 50, (uint8_t *) "GPS", LEFT_MODE);
 	BSP_LCD_DisplayStringAt(14, 80, (uint8_t *) "LONG.", LEFT_MODE);
 	BSP_LCD_DisplayStringAt(14, 100, (uint8_t *) "LAT.", LEFT_MODE);
-	BSP_LCD_DisplayStringAt(14, 120, (uint8_t *) "SPEED.", LEFT_MODE);
-	BSP_LCD_DisplayStringAt(14, 140, (uint8_t *) "ALT.", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(14, 140, (uint8_t *) "SPEED.", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(14, 120, (uint8_t *) "ALT.", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(14, 160, (uint8_t *) "SATS.", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(14, 180, (uint8_t *) "FIX", LEFT_MODE);
 
 	//int throttle_map = map(throttle, 875, 3300, 0, 100);
 
@@ -97,6 +115,7 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 
 	//GPS variables
 
+
 	//snprintf(long_str, sizeof(long_str), "%f", -234.242);
 	float_to_string(GPS.Longitude, long_str);
 	BSP_LCD_DisplayStringAt(100, 80, (uint8_t *) long_str, LEFT_MODE);
@@ -105,10 +124,19 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	BSP_LCD_DisplayStringAt(100, 100, (uint8_t *) latt_str, LEFT_MODE);
 
 	float_to_string(GPS.Speed, speed_str);
-	BSP_LCD_DisplayStringAt(100, 120, (uint8_t *) speed_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(100, 140, (uint8_t *) speed_str, LEFT_MODE);
 
 	float_to_string(GPS.Altitude, alt_str);
-	BSP_LCD_DisplayStringAt(100, 140, (uint8_t *) alt_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(100, 120, (uint8_t *) alt_str, LEFT_MODE);
+
+	//float_to_string(GPS.sattelite_no, sattelite_no_str);
+
+	snprintf(sattelite_no_str, sizeof(sattelite_no_str), "%d", GPS.sattelite_no);
+
+	BSP_LCD_DisplayStringAt(100, 160, (uint8_t *) sattelite_no_str, LEFT_MODE);
+
+	float_to_string(GPS.fix_quality, fix_str);
+	BSP_LCD_DisplayStringAt(100, 180, (uint8_t *) fix_str, LEFT_MODE);
 
 	///////////////////////////////// Top bar //////////////////////////////////////////
 
@@ -125,21 +153,42 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	itoa(69, tx_battery_str, 10);
 	BSP_LCD_DisplayStringAt(44, 10, (uint8_t *) tx_battery_str, LEFT_MODE);
 
-	BSP_LCD_DisplayStringAt(140, 10, (uint8_t *) "10:43", LEFT_MODE);
+
+	/////////////////// Time and Date ////////////////
+
+//	struct tm time;
+//	char time_buffer[8];
+//	char date_buffer[8];
+//
+//	time.tm_hour = GPS.Hours + 1;
+//	time.tm_min = GPS.Minutes;
+//	time.tm_sec  = GPS.Seconds;
+//	time.tm_mday = GPS.Day;
+//	time.tm_mon = GPS.Month-1;
+//	time.tm_isdst = 0;
+//
+//
+//	strftime(time_buffer,8,"%H:%M:%S", &time);
+//
+//	strftime(date_buffer,8,"%d/%m", &time);
+//
+//	BSP_LCD_DisplayStringAt(100, 10, (uint8_t *) date_buffer, LEFT_MODE);
+//	BSP_LCD_DisplayStringAt(160, 10, (uint8_t *) time_buffer, LEFT_MODE);
+
 
 	if (Misc.connection) {
-		BSP_LCD_DisplayStringAt(220, 10, (uint8_t *) "CON", LEFT_MODE);
+		BSP_LCD_DisplayStringAt(250, 10, (uint8_t *) "CON", LEFT_MODE);
 
 	} else{
-		BSP_LCD_DisplayStringAt(220, 10, (uint8_t *) "    ", LEFT_MODE);
+		BSP_LCD_DisplayStringAt(250, 10, (uint8_t *) "    ", LEFT_MODE);
 
 	}
 
 	if (Misc.airmode) {
-		BSP_LCD_DisplayStringAt(280, 10, (uint8_t *) "AIR", LEFT_MODE);
+		BSP_LCD_DisplayStringAt(300, 10, (uint8_t *) "AIR", LEFT_MODE);
 
 	} else{
-		BSP_LCD_DisplayStringAt(280, 10, (uint8_t *) "    ", LEFT_MODE);
+		BSP_LCD_DisplayStringAt(300, 10, (uint8_t *) "    ", LEFT_MODE);
 
 	}
 
@@ -196,9 +245,14 @@ void drawIMUScreen() {
 }
 
 /*** Convert float to string ***/
-void float_to_string(float f, char r[]) {
+bool float_to_string(float f, char r[]) {
 	long long int length, length2, i, number, position, sign;
 	float number2;
+
+	//If number is invalid for whatever reason exit to avoid a crash
+	if(isnan(f)){
+		return 0;
+	}
 
 	sign = -1;   // -1 == positive number
 	if (f < 0) {
@@ -244,6 +298,8 @@ void float_to_string(float f, char r[]) {
 			number /= 10;
 		}
 	}
+
+	return 1;
 }
 
 /** Number on countu **/
