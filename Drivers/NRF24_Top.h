@@ -107,8 +107,8 @@ void packData(uint32_t * array, bool airmode, bool kill) {
 
 	array++;
 
-	TxData[2] = *array;
-	TxData[3] = *array >> 8;
+	TxData[6] = *array;
+	TxData[7] = *array >> 8;
 
 	array++;
 
@@ -117,8 +117,8 @@ void packData(uint32_t * array, bool airmode, bool kill) {
 
 	array++;
 
-	TxData[6] = *array;
-	TxData[7] = *array >> 8;
+	TxData[2] = *array;
+	TxData[3] = *array >> 8;
 
 	//Air mode bit
 	if (airmode) {

@@ -156,24 +156,24 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 
 	/////////////////// Time and Date ////////////////
 
-//	struct tm time;
-//	char time_buffer[8];
-//	char date_buffer[8];
-//
-//	time.tm_hour = GPS.Hours + 1;
-//	time.tm_min = GPS.Minutes;
-//	time.tm_sec  = GPS.Seconds;
-//	time.tm_mday = GPS.Day;
-//	time.tm_mon = GPS.Month-1;
-//	time.tm_isdst = 0;
-//
-//
-//	strftime(time_buffer,8,"%H:%M:%S", &time);
-//
-//	strftime(date_buffer,8,"%d/%m", &time);
-//
-//	BSP_LCD_DisplayStringAt(100, 10, (uint8_t *) date_buffer, LEFT_MODE);
-//	BSP_LCD_DisplayStringAt(160, 10, (uint8_t *) time_buffer, LEFT_MODE);
+	struct tm time;
+	char time_buffer[8];
+	char date_buffer[12];
+
+	time.tm_hour = GPS.Hours + 1;
+	time.tm_min = GPS.Minutes;
+	time.tm_sec  = GPS.Seconds;
+	time.tm_mday = GPS.Day;
+	time.tm_mon = GPS.Month-1;
+	time.tm_isdst = 0;
+
+
+	strftime(time_buffer,12,"%H:%M:%S", &time);
+
+	strftime(date_buffer,8,"%d/%m", &time);
+
+	//BSP_LCD_DisplayStringAt(100, 10, (uint8_t *) date_buffer, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(140, 10, (uint8_t *) time_buffer, LEFT_MODE);
 
 
 	if (Misc.connection) {
