@@ -36,7 +36,7 @@ struct Misc_str Misc;
 void initLCD(struct GPS_str GPS);
 void drawUI();
 void drawIMUScreen();
-void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc) ;
+void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc, float *enc_pid) ;
 
 bool float_to_string(float f, char r[]);
 int n_tu(int number, int count);

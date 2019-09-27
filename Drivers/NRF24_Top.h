@@ -20,10 +20,10 @@ SPI_HandleTypeDef none;
 
 //NRF24 Module variables
 uint64_t TxpipeAddrs = 0x11223344AA;
-char TxData[32];
+unsigned char TxData[32];
 uint8_t AckPayload[32];
 
-void packData(uint32_t * array, bool airmode, bool kill);
+void packData(uint32_t * array, bool airmode, bool kill, float *enc_pid);
 void unpackAckPayload(struct GPS_str GPS, struct IMU_str IMU);
 
 void unpackAckPayload_0();
@@ -46,7 +46,6 @@ void NRF24_init(struct GPS_str GPS) {
 		AckPayload[i] = 0;
 	}
 
-
 	GPS.Altitude = 0.00;
 	GPS.Day = 0;
 	GPS.Hours = 0;
@@ -59,7 +58,6 @@ void NRF24_init(struct GPS_str GPS) {
 	GPS.Year = 0;
 	GPS.fix_quality = 0;
 	GPS.sattelite_no = 0;
-
 
 }
 
@@ -97,28 +95,28 @@ bool sendPayload() {
 
 }
 
-void packData(uint32_t * array, bool airmode, bool kill) {
+void packData(uint32_t * array, bool airmode, bool kill, float *enc_pid) {
 
-	//L Joystick X
-	//First byte = first byte of A0
-	TxData[0] = *array;
-	//Second bytes = last byte of A0
-	TxData[1] = *array >> 8;
 
-	array++;
+//	array[1] = 4096 - array[1];
+//	array[2] = 4096 - array[2];
 
-	TxData[6] = *array;
-	TxData[7] = *array >> 8;
+	//L joystick X
+	TxData[0] = array[0];
+	TxData[1] = array[0] >> 8;
 
-	array++;
+	//L joystick Y
+	TxData[2] = array[3];
+	TxData[3] = array[3] >> 8;
 
-	TxData[4] = *array;
-	TxData[5] = *array >> 8;
+	//R joystick X
+	TxData[4] = array[2];
+	TxData[5] = array[2] >> 8;
 
-	array++;
+	//R joystick Y
+	TxData[6] = array[1];
+	TxData[7] = array[1] >> 8;
 
-	TxData[2] = *array;
-	TxData[3] = *array >> 8;
 
 	//Air mode bit
 	if (airmode) {
@@ -127,7 +125,7 @@ void packData(uint32_t * array, bool airmode, bool kill) {
 		TxData[8] &= ~(1 << 0);
 	}
 
-	//Kill switch
+	//Kill switch bit
 	if (kill) {
 
 		TxData[8] |= 1 << 1;
@@ -135,18 +133,22 @@ void packData(uint32_t * array, bool airmode, bool kill) {
 		TxData[8] &= ~(1 << 1);
 	}
 
-	//	uint16_t roll_p_tx = round(roll_p * 100);
-	//	uint16_t roll_i_tx = round(roll_i * 100) ;
-	//	uint16_t roll_d_tx = round(roll_d * 100) ;
-	//
-	//	TxData[9] = roll_p_tx;
-	//	TxData[10] = roll_p_tx >> 8;
-	//
-	//	TxData[11] = roll_i_tx;
-	//	TxData[12] = roll_i_tx >> 8;
-	//
-	//	TxData[13] = roll_d_tx;
-	//	TxData[14] = roll_d_tx >> 8;
+	if(TxData[8]  > 0x03 ){
+		while(1);
+	}
+
+		uint16_t roll_p_tx = round(enc_pid[0] * 100);
+		uint16_t roll_i_tx = round(enc_pid[1] * 100) ;
+		uint16_t roll_d_tx = round(enc_pid[2] * 100) ;
+
+		TxData[9] = roll_p_tx;
+		TxData[10] = roll_p_tx >> 8;
+
+		TxData[11] = roll_i_tx;
+		TxData[12] = roll_i_tx >> 8;
+
+		TxData[13] = roll_d_tx;
+		TxData[14] = roll_d_tx >> 8;
 
 }
 
@@ -180,7 +182,7 @@ void unpackAckPayload_1() {
 	GPS.Speed = speed_rx / 100;
 
 	//Longitude, latitude and altitude
-	unsigned char temp[4] = {0,0,0,0};
+	unsigned char temp[4] = { 0, 0, 0, 0 };
 
 	temp[0] = AckPayload[11];
 	temp[1] = AckPayload[12];

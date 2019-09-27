@@ -72,9 +72,7 @@ void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 float map(int x, int in_min, int in_max, int out_min, int out_max);
-int8_t read_rotary_1();
-int8_t read_rotary_2();
-int8_t read_rotary_3();
+
 void sendPayload();
 /* USER CODE END PFP */
 
@@ -93,9 +91,6 @@ char xTouchStr[10];
 
 
 
-float roll_p = 0;
-float roll_i = 0;
-float roll_d = 0;
 
 
 /* USER CODE END 0 */
@@ -244,146 +239,7 @@ void SystemClock_Config(void)
 
 
 
-static uint8_t prevNextCode_1 = 0;
-static uint16_t store_1=0;
 
-static uint8_t prevNextCode_2 = 0;
-static uint16_t store_2=0;
-
-
-static uint8_t prevNextCode_3 = 0;
-static uint16_t store_3=0;
-
-
-//GPIO interrupt callback
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-
-	//Encoder 1 Pin A interrupt
-	if (GPIO_Pin == GPIO_PIN_7) {
-
-
-		if(read_rotary_1()){
-
-			if ( prevNextCode_1==0x0b) {
-				if (roll_d > 0) {
-					roll_d -= 0.5;
-				}
-			}
-
-			if ( prevNextCode_1==0x07) {
-				roll_d += 0.5;
-			}
-		}
-
-	}
-
-	//Encoder 2 Pin A interrupt
-	if (GPIO_Pin == GPIO_PIN_4) {
-
-		if(read_rotary_2()){
-
-			if ( prevNextCode_2==0x0b) {
-				if (roll_i > 0) {
-					roll_i -= 0.5;
-				}
-			}
-
-			if ( prevNextCode_2==0x07) {
-				roll_i += 0.5;
-			}
-		}
-
-	}
-
-	//Encoder 3 Pin A interrupt
-	if (GPIO_Pin == GPIO_PIN_6) {
-
-		if(read_rotary_3()){
-
-			if ( prevNextCode_3==0x0b) {
-				if (roll_p > 0) {
-					roll_p -= 0.5;
-				}
-			}
-
-			if ( prevNextCode_3==0x07) {
-				roll_p += 0.5;
-			}
-		}
-
-	}
-
-}
-
-
-
-
-// A vald CW or  CCW move returns 1, invalid returns 0.
-int8_t read_rotary_1() {
-	static int8_t rot_enc_table[] = {0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0};
-
-	prevNextCode_1 <<= 2;
-
-	if (HAL_GPIO_ReadPin(GPIOF, ENC1_A_Pin) == GPIO_PIN_SET) prevNextCode_1 |= 0x02;
-	if (HAL_GPIO_ReadPin(GPIOC, ENC1_B_Pin) == GPIO_PIN_SET) prevNextCode_1 |= 0x01;
-	prevNextCode_1 &= 0x0f;
-
-	// If valid then store_1 as 16 bit data.
-	if  (rot_enc_table[prevNextCode_1] ) {
-		store_1 <<= 4;
-		store_1 |= prevNextCode_1;
-
-		if ((store_1&0xff)==0x2b) return -1;
-		if ((store_1&0xff)==0x17) return 1;
-	}
-	return 0;
-}
-
-
-// A vald CW or  CCW move returns 1, invalid returns 0.
-int8_t read_rotary_2() {
-	static int8_t rot_enc_table[] = {0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0};
-
-	prevNextCode_2 <<= 2;
-
-	if (HAL_GPIO_ReadPin(GPIOB, ENC2_A_Pin) == GPIO_PIN_SET) prevNextCode_2 |= 0x02;
-	if (HAL_GPIO_ReadPin(GPIOG, ENC2_B_Pin) == GPIO_PIN_SET) prevNextCode_2 |= 0x01;
-	prevNextCode_2 &= 0x0f;
-
-	// If valid then store_2 as 16 bit data.
-	if  (rot_enc_table[prevNextCode_2] ) {
-		store_2 <<= 4;
-		store_2 |= prevNextCode_2;
-
-		if ((store_2&0xff)==0x2b) return -1;
-		if ((store_2&0xff)==0x17) return 1;
-	}
-	return 0;
-}
-
-
-
-
-// A vald CW or  CCW move returns 1, invalid returns 0.
-int8_t read_rotary_3() {
-	static int8_t rot_enc_table[] = {0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0};
-
-	prevNextCode_3 <<= 2;
-
-	if (HAL_GPIO_ReadPin(GPIOH, ENC3_A_Pin) == GPIO_PIN_SET) prevNextCode_3 |= 0x02;
-	if (HAL_GPIO_ReadPin(GPIOI, ENC3_B_Pin) == GPIO_PIN_SET) prevNextCode_3 |= 0x01;
-	prevNextCode_3 &= 0x0f;
-
-	// If valid then store_1 as 16 bit data.
-	if  (rot_enc_table[prevNextCode_3] ) {
-		store_3 <<= 4;
-		store_3 |= prevNextCode_3;
-
-		if ((store_3&0xff)==0x2b) return -1;
-		if ((store_3&0xff)==0x17) return 1;
-	}
-	return 0;
-}
 
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)

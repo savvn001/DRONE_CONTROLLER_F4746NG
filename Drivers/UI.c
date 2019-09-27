@@ -16,7 +16,8 @@ bool cleared = 0;
 void initLCD(struct GPS_str GPS) {
 
 	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
-	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
+	__HAL_RCC_CRC_CLK_ENABLE()
+	; /* Enable the CRC Module */
 
 	BSP_TS_Init(480, 272);
 
@@ -30,8 +31,6 @@ void initLCD(struct GPS_str GPS) {
 	BSP_LCD_SetTextColor(LCD_COLOR_DARKBLUE);
 	BSP_LCD_FillRect(0, 0, 480, 40);
 
-
-
 	GPS.Altitude = 0.00;
 	GPS.Day = 0;
 	GPS.Hours = 0;
@@ -44,8 +43,6 @@ void initLCD(struct GPS_str GPS) {
 	GPS.Year = 0;
 	GPS.fix_quality = 0;
 	GPS.sattelite_no = 0;
-
-
 
 }
 
@@ -87,10 +84,10 @@ void drawUI() {
 
 }
 
-void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc) {
+void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
+		struct Misc_str Misc, float *enc_pid) {
 
 	///////////////////////////////// GPS section //////////////////////////////////////////
-
 
 	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
 	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
@@ -107,14 +104,11 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 
 	//int throttle_map = map(throttle, 875, 3300, 0, 100);
 
-
 	//float_to_string(throttle_map, throttle_str);
 	BSP_LCD_DisplayStringAt(14, 240, (uint8_t *) "THRT", LEFT_MODE);
 	BSP_LCD_DisplayStringAt(100, 240, (uint8_t *) throttle_str, LEFT_MODE);
 
-
 	//GPS variables
-
 
 	//snprintf(long_str, sizeof(long_str), "%f", -234.242);
 	float_to_string(GPS.Longitude, long_str);
@@ -131,7 +125,8 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 
 	//float_to_string(GPS.sattelite_no, sattelite_no_str);
 
-	snprintf(sattelite_no_str, sizeof(sattelite_no_str), "%d", GPS.sattelite_no);
+	snprintf(sattelite_no_str, sizeof(sattelite_no_str), "%d",
+			GPS.sattelite_no);
 
 	BSP_LCD_DisplayStringAt(100, 160, (uint8_t *) sattelite_no_str, LEFT_MODE);
 
@@ -153,7 +148,6 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	itoa(69, tx_battery_str, 10);
 	BSP_LCD_DisplayStringAt(44, 10, (uint8_t *) tx_battery_str, LEFT_MODE);
 
-
 	/////////////////// Time and Date ////////////////
 
 	struct tm time;
@@ -162,24 +156,22 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 
 	time.tm_hour = GPS.Hours + 1;
 	time.tm_min = GPS.Minutes;
-	time.tm_sec  = GPS.Seconds;
+	time.tm_sec = GPS.Seconds;
 	time.tm_mday = GPS.Day;
-	time.tm_mon = GPS.Month-1;
+	time.tm_mon = GPS.Month - 1;
 	time.tm_isdst = 0;
 
+	strftime(time_buffer, 12, "%H:%M:%S", &time);
 
-	strftime(time_buffer,12,"%H:%M:%S", &time);
-
-	strftime(date_buffer,8,"%d/%m", &time);
+	strftime(date_buffer, 8, "%d/%m", &time);
 
 	//BSP_LCD_DisplayStringAt(100, 10, (uint8_t *) date_buffer, LEFT_MODE);
 	BSP_LCD_DisplayStringAt(140, 10, (uint8_t *) time_buffer, LEFT_MODE);
 
-
 	if (Misc.connection) {
 		BSP_LCD_DisplayStringAt(250, 10, (uint8_t *) "CON", LEFT_MODE);
 
-	} else{
+	} else {
 		BSP_LCD_DisplayStringAt(250, 10, (uint8_t *) "    ", LEFT_MODE);
 
 	}
@@ -187,12 +179,12 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	if (Misc.airmode) {
 		BSP_LCD_DisplayStringAt(300, 10, (uint8_t *) "AIR", LEFT_MODE);
 
-	} else{
+	} else {
 		BSP_LCD_DisplayStringAt(300, 10, (uint8_t *) "    ", LEFT_MODE);
 
 	}
 
-	/////////////// RPY /////////
+	/////////////// RPY /////////////////////////////////////////
 
 	BSP_LCD_DrawCircle(400, 120, 40);
 	BSP_LCD_SetTextColor(LCD_COLOR_DARKRED);
@@ -218,7 +210,22 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 	BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) pitch_str, RIGHT_MODE);
 	BSP_LCD_DisplayStringAt(20, 240, (uint8_t *) yaw_str, RIGHT_MODE);
 
+	//////////////////////////PID////////////////////////////////
+	BSP_LCD_DisplayStringAt(250, 200, (uint8_t *) "P", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(250, 220, (uint8_t *) "I", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(250, 240, (uint8_t *) "D", LEFT_MODE);
 
+	char p_str[3];
+	char i_str[3];
+	char d_str[3];
+
+	float_to_string(enc_pid[0], p_str);
+	float_to_string(enc_pid[1], i_str);
+	float_to_string(enc_pid[2], d_str);
+
+	BSP_LCD_DisplayStringAt(280, 200, (uint8_t *) p_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(280, 220, (uint8_t *) i_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(280, 240, (uint8_t *) d_str, LEFT_MODE);
 
 	if (Misc.kill) {
 
@@ -226,8 +233,8 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc
 		BSP_LCD_SetTextColor(LCD_COLOR_RED);
 		BSP_LCD_SetFont(&Font20);
 
-		BSP_LCD_DisplayStringAt(0, 80,
-				(uint8_t *) "EMERGENCY KILL ON", CENTER_MODE);
+		BSP_LCD_DisplayStringAt(0, 80, (uint8_t *) "EMERGENCY KILL ON",
+				CENTER_MODE);
 		cleared = 0;
 	} else {
 		if (!cleared) {
@@ -250,7 +257,7 @@ bool float_to_string(float f, char r[]) {
 	float number2;
 
 	//If number is invalid for whatever reason exit to avoid a crash
-	if(isnan(f)){
+	if (isnan(f)) {
 		return 0;
 	}
 
@@ -311,7 +318,6 @@ int n_tu(int number, int count) {
 
 	return result;
 }
-
 
 float map(int x, int in_min, int in_max, int out_min, int out_max) {
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
