@@ -12,14 +12,7 @@
 
 //Touch screen variables
 TS_StateTypeDef ts;
-char xTouchStr[10];
-
 bool cleared = 0;
-
-char time_buffer[8];
-char date_buffer[12];
-
-
 void initLCD(struct GPS_str GPS) {
 
 	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
@@ -156,7 +149,10 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
 	BSP_LCD_DisplayStringAt(44, 10, (uint8_t *) tx_battery_str, LEFT_MODE);
 
 	/////////////////// Time and Date ////////////////
+
 	struct tm time;
+	char time_buffer[8];
+	char date_buffer[12];
 
 	time.tm_hour = GPS.Hours + 1;
 	time.tm_min = GPS.Minutes;
@@ -198,18 +194,38 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
 	BSP_LCD_FillCircle(400, 120, 5);
 
 	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
-	BSP_LCD_DisplayStringAt(200, 90, (uint8_t *) "ROLL", LEFT_MODE);
-	BSP_LCD_DisplayStringAt(200, 110, (uint8_t *) "PITCH", LEFT_MODE);
-	BSP_LCD_DisplayStringAt(200, 130, (uint8_t *) "YAW", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(330, 200, (uint8_t *) "ROLL", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(330, 220, (uint8_t *) "PITCH", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(330, 240, (uint8_t *) "YAW", LEFT_MODE);
 
 	float_to_string(IMU.roll, roll_str);
 	float_to_string(IMU.pitch, pitch_str);
 	float_to_string(IMU.yaw, yaw_str);
 
-	BSP_LCD_DisplayStringAt(300, 90, (uint8_t *) roll_str, LEFT_MODE);
-	BSP_LCD_DisplayStringAt(300, 110, (uint8_t *) pitch_str, LEFT_MODE);
-	BSP_LCD_DisplayStringAt(300, 130, (uint8_t *) yaw_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(20, 200, (uint8_t *) "      ", RIGHT_MODE);
+	BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) "      ", RIGHT_MODE);
+	BSP_LCD_DisplayStringAt(20, 240, (uint8_t *) "      ", RIGHT_MODE);
 
+	BSP_LCD_DisplayStringAt(20, 200, (uint8_t *) roll_str, RIGHT_MODE);
+	BSP_LCD_DisplayStringAt(20, 220, (uint8_t *) pitch_str, RIGHT_MODE);
+	BSP_LCD_DisplayStringAt(20, 240, (uint8_t *) yaw_str, RIGHT_MODE);
+
+	//////////////////////////PID////////////////////////////////
+	BSP_LCD_DisplayStringAt(250, 200, (uint8_t *) "P", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(250, 220, (uint8_t *) "I", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(250, 240, (uint8_t *) "D", LEFT_MODE);
+
+	char p_str[3];
+	char i_str[3];
+	char d_str[3];
+
+	float_to_string(enc_pid[0], p_str);
+	float_to_string(enc_pid[1], i_str);
+	float_to_string(enc_pid[2], d_str);
+
+	BSP_LCD_DisplayStringAt(280, 200, (uint8_t *) p_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(280, 220, (uint8_t *) i_str, LEFT_MODE);
+	BSP_LCD_DisplayStringAt(280, 240, (uint8_t *) d_str, LEFT_MODE);
 
 	if (Misc.kill) {
 
@@ -228,18 +244,6 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
 		}
 		cleared = 1;
 	}
-
-
-	  BSP_TS_GetState(&ts);
-	  sprintf(xTouchStr, "X: %3d", ts.touchX[0]);
-	  BSP_LCD_DisplayStringAt(20, 20, (uint8_t *)xTouchStr, LEFT_MODE);
-
-	  sprintf(xTouchStr, "Y: %3d", ts.touchY[0]);
-	  BSP_LCD_DisplayStringAt(20, 60, (uint8_t *)xTouchStr, LEFT_MODE);
-	  HAL_Delay(50);
-
-
-
 
 }
 
