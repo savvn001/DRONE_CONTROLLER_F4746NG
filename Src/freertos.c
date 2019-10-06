@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
-#include "../Drivers/UI.h"
+#include "../GUI/GUI.h"
 #include "../Drivers/NRF24_Top.h"
 #include "adc.h"
 #include "tim.h"
@@ -78,7 +78,10 @@ static uint16_t store_2 = 0;
 static uint8_t prevNextCode_3 = 0;
 static uint16_t store_3 = 0;
 
-float enc_pid[3] = { 0.00, 0.000, 0.000 };
+//Which axis is currently being tuned
+// 0 = Roll, 3 = Pitch, 6 = Yaw
+uint8_t tune_axis = 0;
+float enc_pid[6] = { 0.00, 0.000, 0.000, 0.00, 0.000, 0.000 };
 
 /* USER CODE END FunctionPrototypes */
 
@@ -166,11 +169,11 @@ void StartDrawUI(void const * argument)
 		xSemaphoreTake(RxDataMutexHandle, portMAX_DELAY);
 		xSemaphoreTake(SwDataMutexHandle, portMAX_DELAY);
 		xSemaphoreTake(EncDataMutexHandle, portMAX_DELAY);
-		drawMainScreen(GPS, IMU, Misc, enc_pid);
+		drawUI(GPS, IMU, Misc, enc_pid, &tune_axis);
 		xSemaphoreGive(RxDataMutexHandle);
 		xSemaphoreGive(SwDataMutexHandle);
 		xSemaphoreGive(EncDataMutexHandle);
-		osDelay(20);
+		osDelay(2);
 	}
   /* USER CODE END StartDrawUI */
 }
@@ -260,12 +263,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		if (read_rotary_1()) {
 
 			if (prevNextCode_1 == 0x0b) {
-				if (enc_pid[2] > 0) {
-					enc_pid[2] -= 0.1;
+				if (enc_pid[tune_axis + 2] > 0) {
+					enc_pid[tune_axis + 2] -= 0.1;
 				}
 			}
 			if (prevNextCode_1 == 0x07) {
-				enc_pid[2] += 0.1;
+				enc_pid[tune_axis + 2] += 0.1;
 			}
 		}
 	}
@@ -274,13 +277,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		if (read_rotary_2()) {
 
 			if (prevNextCode_2 == 0x0b) {
-				if (enc_pid[1] > 0) {
-					enc_pid[1] -= 0.1;
+				if (enc_pid[tune_axis + 1] > 0) {
+					enc_pid[tune_axis + 1] -= 0.1;
 				}
 			}
 
 			if (prevNextCode_2 == 0x07) {
-				enc_pid[1] += 0.1;
+				enc_pid[tune_axis + 1] += 0.1;
 			}
 		}
 	}
@@ -290,12 +293,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		if (read_rotary_3()) {
 
 			if (prevNextCode_3 == 0x0b) {
-				if (enc_pid[0] > 0) {
-					enc_pid[0] -= 0.1;
+				if (enc_pid[tune_axis + 0] > 0) {
+					enc_pid[tune_axis + 0] -= 0.5;
 				}
 			}
 			if (prevNextCode_3 == 0x07) {
-				enc_pid[0] += 0.1;
+				enc_pid[tune_axis + 0] += 0.5;
 			}
 		}
 	}

@@ -5,7 +5,7 @@
  *      Author: nick_savva
  */
 
-#include "UI.h"
+#include <GUI.h>
 #include  "time.h"
 #include "../GUI/Images/icons.h"
 #include <math.h>
@@ -19,6 +19,9 @@ bool cleared = 0;
 char time_buffer[8];
 char date_buffer[12];
 
+uint16_t roll_plot[480];
+uint16_t pitch_plot[480];
+uint16_t yaw_plot[480];
 
 void initLCD(struct GPS_str GPS) {
 
@@ -70,21 +73,33 @@ char yaw_str[6];
 
 /*	Current screen for state machine...
  * 	0 = main
- *  1 = IMU graphs
+ *  1 = settings
  *	2 = GPS info
- * 	3 = settings
+ * 	3 = IMU graphs
  */
-int screen;
+int screen = 0;
 
-void drawUI() {
+void drawUI(struct GPS_str GPS, struct IMU_str IMU, struct Misc_str Misc,
+		float *enc_pid, uint8_t *tune_axis) {
+
+	BSP_TS_GetState(&ts);
+
+	sprintf(xTouchStr, "X: %3d", ts.touchX[0]);
+	//BSP_LCD_DisplayStringAt(20, 20, (uint8_t *) xTouchStr, LEFT_MODE);
+
+	sprintf(xTouchStr, "Y: %3d", ts.touchY[0]);
+	//BSP_LCD_DisplayStringAt(20, 60, (uint8_t *) xTouchStr, LEFT_MODE);
 
 	switch (screen) {
 	case 0:
-		//drawMainScreen();
+		drawMainScreen(GPS, IMU, Misc, enc_pid);
 		break;
 	case 1:
-		drawIMUScreen();
-
+		drawSettingsScreen();
+		break;
+	case 3:
+		drawPIDscreen(IMU, enc_pid, tune_axis);
+		break;
 	default:
 		break;
 	}
@@ -210,7 +225,6 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
 	BSP_LCD_DisplayStringAt(300, 110, (uint8_t *) pitch_str, LEFT_MODE);
 	BSP_LCD_DisplayStringAt(300, 130, (uint8_t *) yaw_str, LEFT_MODE);
 
-
 	if (Misc.kill) {
 
 		BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
@@ -229,21 +243,237 @@ void drawMainScreen(struct GPS_str GPS, struct IMU_str IMU,
 		cleared = 1;
 	}
 
+	Button settings;
 
-	  BSP_TS_GetState(&ts);
-	  sprintf(xTouchStr, "X: %3d", ts.touchX[0]);
-	  BSP_LCD_DisplayStringAt(20, 20, (uint8_t *)xTouchStr, LEFT_MODE);
+	settings.txt = "Settings";
+	settings.txt_l = 4;
+	settings.txt_offset = 25;
+	settings.x = 380;
+	settings.y = 220;
+	settings.width = 160;
+	settings.height = 40;
+	settings.fontSize = 12;
+	createButton(settings, &settings.press);
 
-	  sprintf(xTouchStr, "Y: %3d", ts.touchY[0]);
-	  BSP_LCD_DisplayStringAt(20, 60, (uint8_t *)xTouchStr, LEFT_MODE);
-	  HAL_Delay(50);
 
+	BSP_TS_Get_GestureId(&ts);
 
+	if (ts.gestureId == GEST_ID_MOVE_RIGHT) {
+		BSP_LCD_Clear(LCD_COLOR_BLACK);
+		screen = 1;
+	}
 
+	if (settings.press) {
+		BSP_LCD_Clear(LCD_COLOR_BLACK);
+		settings.press = false;
+		screen = 1;
+	}
+
+}
+void drawSettingsScreen() {
+
+	Button pid_button;
+
+	pid_button.txt = "PID";
+	pid_button.txt_l = 4;
+	pid_button.txt_offset = 55;
+	pid_button.x = 150;
+	pid_button.y = 40;
+	pid_button.width = 240;
+	pid_button.height = 50;
+	pid_button.fontSize = 16;
+	createButton(pid_button, &pid_button.press);
+
+	//Check if PID button pressed
+	if (pid_button.press) {
+		pid_button.press = false;
+		screen = 3;
+		BSP_LCD_Clear(LCD_COLOR_BLACK);
+	}
 
 }
 
-void drawIMUScreen() {
+int pitch_index = 0;
+int yaw_index = 0;
+char roll_p_str[4];
+char roll_i_str[4];
+char roll_d_str[4];
+char pitch_p_str[4];
+char pitch_i_str[4];
+char pitch_d_str[4];
+void drawPIDscreen(struct IMU_str IMU, float *enc_pid, uint8_t *tune_axis) {
+
+	Button pid_roll_button;
+
+	pid_roll_button.txt = "Roll";
+	pid_roll_button.txt_l = 4;
+	pid_roll_button.txt_offset = 25;
+	pid_roll_button.x = 0;
+	pid_roll_button.y = 240;
+	pid_roll_button.width = 120;
+	pid_roll_button.height = 35;
+	pid_roll_button.fontSize = 12;
+	createButton(pid_roll_button, &pid_roll_button.press);
+
+	Button pid_pitch_button;
+
+	pid_pitch_button.txt = "Pitch";
+	pid_pitch_button.txt_l = 4;
+	pid_pitch_button.txt_offset = 25;
+	pid_pitch_button.x = 120;
+	pid_pitch_button.y = 240;
+	pid_pitch_button.width = 120;
+	pid_pitch_button.height = 35;
+	pid_pitch_button.fontSize = 12;
+	createButton(pid_pitch_button, &pid_pitch_button.press);
+
+	Button pid_yaw_button;
+
+	pid_yaw_button.txt = "yaw";
+	pid_yaw_button.txt_l = 4;
+	pid_yaw_button.txt_offset = 25;
+	pid_yaw_button.x = 240;
+	pid_yaw_button.y = 240;
+	pid_yaw_button.width = 120;
+	pid_yaw_button.height = 35;
+	pid_yaw_button.fontSize = 12;
+	createButton(pid_yaw_button, &pid_yaw_button.press);
+
+	Button pid_all_button;
+
+	pid_all_button.txt = "All";
+	pid_all_button.txt_l = 4;
+	pid_all_button.txt_offset = 25;
+	pid_all_button.x = 360;
+	pid_all_button.y = 240;
+	pid_all_button.width = 120;
+	pid_all_button.height = 35;
+	pid_all_button.fontSize = 12;
+	createButton(pid_all_button, &pid_all_button.press);
+
+	BSP_LCD_DisplayStringAt(420, 50, (uint8_t *) "P:", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(420, 80, (uint8_t *) "I:", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(420, 110, (uint8_t *) "D:", LEFT_MODE);
+
+	/*******************	 Plot roll angles 	*****************/
+	if (pid_roll_button.press) {
+		pid_roll_button.press = false;
+		*tune_axis = 0;
+		BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+	}
+
+	if (pid_pitch_button.press) {
+		pid_pitch_button.press = false;
+		*tune_axis = 3;
+		BSP_LCD_Clear(LCD_COLOR_BLACK);
+	}
+
+	switch (*tune_axis) {
+	case 0:
+
+		float_to_string(enc_pid[0], roll_p_str);
+		drawFloatString(roll_p_str, 440, 50);
+
+		float_to_string(enc_pid[1], roll_i_str);
+		drawFloatString(roll_i_str, 440, 80);
+
+		float_to_string(enc_pid[2], roll_d_str);
+		drawFloatString(roll_d_str, 440, 110);
+
+		createGraph(0, roll_plot);
+
+		break;
+
+	case 3:
+
+		float_to_string(enc_pid[3], pitch_p_str);
+		drawFloatString(pitch_p_str, 440, 50);
+
+		float_to_string(enc_pid[4], pitch_i_str);
+		drawFloatString(pitch_i_str, 440, 80);
+
+		float_to_string(enc_pid[5], pitch_d_str);
+		drawFloatString(pitch_d_str, 440, 110);
+
+		createGraph(0, pitch_plot);
+
+	default:
+		break;
+	}
+}
+
+int cur_index = 0;
+
+void createGraph(float input, uint16_t *plot_data) {
+
+	int16_t px_y;
+
+	for (int var = 10; var <= 190; var += 45) {
+		BSP_LCD_DrawHLine(0, var, 400);
+	}
+
+	BSP_LCD_DisplayStringAt(0, 115, (uint8_t *) "0", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(0, 10, (uint8_t *) "90", LEFT_MODE);
+	BSP_LCD_DisplayStringAt(0, 220, (uint8_t *) "-90", LEFT_MODE);
+
+	px_y = map(input, -45, 45, 10, 190);
+
+	//Newest data goes on last free element
+	if (cur_index < 400) {
+		plot_data[cur_index] = px_y;
+		cur_index++;
+	} else {
+		//Shift array left
+		int temp = 0;
+
+		temp = roll_plot[0];
+		for (int i = 0; i < 480 - 1; i++) {
+			plot_data[i] = plot_data[i + 1];
+		}
+		plot_data[400 - 1] = temp;
+
+		//Add newest element
+		plot_data[379] = px_y;
+	}
+
+	for (int j = 0; j < 400; ++j) {
+		BSP_LCD_DrawPixel(j, plot_data[j], LCD_COLOR_GREEN);
+	}
+
+}
+
+void createButton(Button button_str, bool *pressed) {
+
+	switch (button_str.fontSize) {
+	case 12:
+		BSP_LCD_SetFont(&FontAvenir12);
+		break;
+	case 16:
+		BSP_LCD_SetFont(&FontAvenir16);
+		break;
+	default:
+		break;
+	}
+
+	BSP_LCD_DrawRect(button_str.x, button_str.y, button_str.width,
+			button_str.height);
+	BSP_LCD_DisplayStringAt(button_str.x + button_str.txt_offset,
+			button_str.y + (button_str.height / 3), (uint8_t *) button_str.txt,
+			LEFT_MODE);
+
+	if (ts.touchDetected) {
+
+		if (ts.touchX[0] > button_str.x
+				&& ts.touchX[0] < (button_str.x + button_str.width)
+				&& ts.touchY[0] > button_str.y
+				&& ts.touchY[0] < (button_str.y + button_str.height)) {
+			*pressed = true;
+
+		}
+	} else {
+		*pressed = false;
+	}
 
 }
 
@@ -315,6 +545,20 @@ int n_tu(int number, int count) {
 	return result;
 }
 
-float map(int x, int in_min, int in_max, int out_min, int out_max) {
+float map(float x, float in_min, float in_max, float out_min, float out_max) {
 	return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+char *dtostrf(double val, signed char width, unsigned char prec, char *sout) {
+	char fmt[20];
+	sprintf(fmt, "%%%d.%df", width, prec);
+	sprintf(sout, fmt, val);
+	return sout;
+}
+
+void drawFloatString(char *array, int16_t xpos, int16_t ypos) {
+	BSP_LCD_DisplayChar(xpos, ypos, array[0]);
+	BSP_LCD_DisplayChar(xpos + 10, ypos, array[1]);
+	BSP_LCD_DisplayChar(xpos + 20, ypos, array[2]);
+	BSP_LCD_DisplayChar(xpos + 30, ypos, array[3]);
 }
